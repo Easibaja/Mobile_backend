@@ -1,17 +1,17 @@
 import { Router } from 'express';
-import { loginOrSignupWithGoogle } from '../../application/services/authService';
+import { loginOrSignup } from '../../application/services/authService';
 
 const router = Router();
 
-router.post('/google', async (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
-    const { idToken } = req.body;
+    const { provider, idToken } = req.body;
 
-    if (!idToken) {
-      return res.status(400).json({ message: 'idToken is required' });
+    if (!provider || !idToken) {
+      return res.status(400).json({ message: 'provider and idToken are required' });
     }
 
-    const result = await loginOrSignupWithGoogle(idToken);
+    const result = await loginOrSignup(provider, idToken);
     res.json(result);
   } catch (error) {
     next(error);

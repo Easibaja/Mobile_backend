@@ -1,11 +1,12 @@
 CREATE TABLE IF NOT EXISTS public.users (
   id TEXT PRIMARY KEY,
   provider TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
+  email TEXT,
   name TEXT,
   picture TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(provider, email)
 );
 
 CREATE OR REPLACE FUNCTION public.set_updated_at()

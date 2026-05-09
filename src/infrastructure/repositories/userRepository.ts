@@ -3,7 +3,7 @@ import { pool } from '../db/postgresClient';
 export type User = {
   id: string;
   provider: string;
-  email: string;
+  email?: string;
   name?: string;
   picture?: string;
   createdAt: string;
@@ -13,7 +13,7 @@ export type User = {
 const mapRowToUser = (row: any): User => ({
   id: row.id,
   provider: row.provider,
-  email: row.email,
+  email: row.email || undefined,
   name: row.name || undefined,
   picture: row.picture || undefined,
   createdAt: row.created_at,
@@ -21,6 +21,14 @@ const mapRowToUser = (row: any): User => ({
 });
 
 export class UserRepository {
+  async findById(id: string): Promise<User | undefined> {
+    const result = await pool.query('SELECT * FROM users WHERE id = $1 LIMIT 1', [id]);
+    if (result.rowCount === 0) {
+      return undefined;
+    }
+    return mapRowToUser(result.rows[0]);
+  }
+
   async findByEmail(email: string): Promise<User | undefined> {
     const result = await pool.query('SELECT * FROM users WHERE email = $1 LIMIT 1', [email]);
     if (result.rowCount === 0) {
@@ -32,21 +40,19 @@ export class UserRepository {
   async save(user: User): Promise<User> {
     const result = await pool.query(
       `INSERT INTO users (id, provider, email, name, picture, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       ON CONFLICT (email) DO UPDATE SET
-         provider = EXCLUDED.provider,
-         name = EXCLUDED.name,
-         picture = EXCLUDED.picture,
-         updated_at = EXCLUDED.updated_at
-       RETURNING *`,
+      VALUES ($1, $2, $3, $4, $5, $6, now())
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        picture = EXCLUDED.picture,
+        updated_at = now()
+      RETURNING *`,
       [
         user.id,
         user.provider,
-        user.email,
-        user.name || null,
-        user.picture || null,
+        user.email ?? null,
+        user.name ?? null,
+        user.picture ?? null,
         user.createdAt,
-        user.updatedAt,
       ],
     );
 
