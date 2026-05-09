@@ -9,3 +9,4 @@ dist/
 *.swo
 coverage/
 .nyc_output/
+tester.html
