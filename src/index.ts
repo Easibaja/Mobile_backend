@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import healthRouter from './presentation/routes/health';
@@ -15,6 +15,12 @@ app.use(express.json());
 
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
+
+app.use((_req: Request, _res: Response, next: NextFunction) => {
+  const err = new Error('Route not found');
+  (err as any).status = 404;
+  next(err);
+});
 
 app.use(errorHandler);
 
