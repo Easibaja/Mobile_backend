@@ -1,4 +1,4 @@
-import { SignJWT } from 'jose';
+import { SignJWT, jwtVerify } from 'jose';
 
 const sessionSecret = process.env.SESSION_SECRET;
 
@@ -7,6 +7,7 @@ if (!sessionSecret) {
 }
 
 const encoder = new TextEncoder();
+const secret = encoder.encode(sessionSecret); // encode once, reuse
 
 export async function createSessionToken(user: {
   id: string;
@@ -21,5 +22,17 @@ export async function createSessionToken(user: {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(encoder.encode(sessionSecret));
+    .sign(secret);
+}
+
+export async function verifySessionToken(token: string): Promise<{
+  sub: string;
+  email?: string;
+  provider: string;
+}> {
+  const { payload } = await jwtVerify(token, secret, {
+    algorithms: ['HS256'],
+  });
+
+  return payload as { sub: string; email?: string; provider: string };
 }

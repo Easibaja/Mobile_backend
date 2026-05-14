@@ -44,7 +44,7 @@ export class UserRepository {
         createdAt: new Date(user.createdAt),
       },
       update: {
-        name: user.name ?? null,
+        name: user.name ?? undefined,
         picture: user.picture ?? null,
       },
     });
