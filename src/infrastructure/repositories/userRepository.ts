@@ -42,8 +42,8 @@ export class UserRepository {
       `INSERT INTO users (id, provider, email, name, picture, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, now())
       ON CONFLICT (id) DO UPDATE SET
-        name = EXCLUDED.name,
-        picture = EXCLUDED.picture,
+        name = COALESCE(EXCLUDED.name, users.name),      -- keep existing if new is null
+        picture = COALESCE(EXCLUDED.picture, users.picture),
         updated_at = now()
       RETURNING *`,
       [
