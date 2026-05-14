@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../../generated/prisma/client';
 
 dotenv.config();
 
@@ -9,10 +10,12 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is not defined in environment');
 }
 
-export const pool = new Pool({
+const adapter = new PrismaPg({
   connectionString,
   ssl:
     process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
       : undefined,
 });
+
+export const prisma = new PrismaClient({ adapter });
