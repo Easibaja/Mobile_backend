@@ -115,6 +115,45 @@ const spec = {
         },
       },
     },
+    '/auth/token': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Get a session token by email (development only)',
+        description: '⚠️ Only works when NODE_ENV=development. Use this to get a token for testing in Swagger without needing the mobile app.',
+        security: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email'],
+                properties: {
+                  email: { type: 'string', example: 'your@email.com' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Session token',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    sessionToken: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Missing email' },
+          404: { description: 'User not found or endpoint disabled in production' },
+        },
+      },
+    },
     '/favorites': {
       get: {
         tags: ['Favorites'],
