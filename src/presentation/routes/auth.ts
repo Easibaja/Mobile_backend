@@ -29,4 +29,28 @@ router.get('/me', requireAuth, async (req: any, res, next) => {
   }
 });
 
+router.post('/token', async (req, res, next) => {
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(404).json({ message: 'Not found' });
+  }
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'email is required' });
+    
+    const user = await userRepository.findByEmail(email);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    const { createSessionToken } = await import('../../application/services/sessionService');
+    const sessionToken = await createSessionToken({
+      id: user.id,
+      email: user.email,
+      provider: user.provider,
+    });
+    
+    res.json({ sessionToken });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
