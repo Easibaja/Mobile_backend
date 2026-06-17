@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../../shared/middleware/authMiddleware';
-import { getUserFavorites, addFavorite, removeFavorite } from '../../application/services/favoriteService';
+import { getUserFavorites, addFavorite, removeFavorite, syncFavorites } from '../../application/services/favoriteService';
 
 const router = Router();
 
@@ -40,6 +40,16 @@ router.delete('/:placeId', async (req, res, next) => {
   try {
     await removeFavorite((req as any).user.sub, req.params.placeId);
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/sync', async (req, res, next) => {
+  try {
+    const favorites = Array.isArray(req.body.favorites) ? req.body.favorites : [];
+    const syncedFavorites = await syncFavorites((req as any).user.sub, favorites);
+    res.json({ favorites: syncedFavorites });
   } catch (error) {
     next(error);
   }

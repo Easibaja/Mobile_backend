@@ -16,6 +16,7 @@ model User {
   createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   favorites Favorite[]
+  settings  UserSettings?
 
   @@unique([provider, email])
   @@map("users")
@@ -33,9 +34,23 @@ model Favorite {
   rating    Float?
   photoName String?  @map("photo_name")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, placeId])
   @@index([userId])
   @@map("favorites")
+}
+
+model UserSettings {
+  userId          String   @id @map("user_id")
+  units           String   @default("km")
+  searchRadius    Int      @default(15000) @map("search_radius")
+  themePreference String   @default("auto") @map("theme_preference")
+  notifications   Boolean  @default(true)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
 }
