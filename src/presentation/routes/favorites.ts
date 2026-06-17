@@ -47,7 +47,12 @@ router.delete('/:placeId', async (req, res, next) => {
 
 router.post('/sync', async (req, res, next) => {
   try {
-    const favorites = Array.isArray(req.body.favorites) ? req.body.favorites : [];
+    const favorites = Array.isArray(req.body.favorites)
+      ? req.body.favorites.map((favorite: any) => {
+          const { userId: _ignoredUserId, ...rest } = favorite ?? {};
+          return rest;
+        })
+      : [];
     const syncedFavorites = await syncFavorites((req as any).user.sub, favorites);
     res.json({ favorites: syncedFavorites });
   } catch (error) {

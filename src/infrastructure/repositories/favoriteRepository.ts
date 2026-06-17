@@ -19,7 +19,7 @@ export type Favorite = {
 
 export type CreateFavoriteInput = Omit<Favorite, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>;
 
-export type FavoriteSyncInput = Omit<Favorite, 'id' | 'createdAt'>;
+export type FavoriteSyncInput = Omit<Favorite, 'id' | 'createdAt' | 'userId'>;
 
 const mapToFavorite = (row: FavoriteModel): Favorite => ({
   id: row.id,
@@ -104,7 +104,7 @@ export class FavoriteRepository {
         }
         return prisma.favorite.create({
           data: {
-            userId: favorite.userId,
+            userId,
             placeId: favorite.placeId,
             name: favorite.name ?? null,
             address: favorite.address ?? null,
