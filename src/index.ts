@@ -7,7 +7,10 @@ import { errorHandler } from './shared/middleware/errorHandler';
 import { logger } from './shared/middleware/logger';
 import favoritesRouter from './presentation/routes/favorites';
 import settingsRouter from './presentation/routes/settings';
+import notificationsRouter from './presentation/routes/notifications';
 import { setupSwagger } from './presentation/docs/swagger';
+import { NotificationQueueWorker } from './infrastructure/queue/notificationQueueWorker';
+import { DailyGreetingService } from './application/services/dailyGreetingService';
 
 dotenv.config();
 
@@ -23,6 +26,7 @@ app.use('/health', healthRouter);
 app.use('/auth', authRouter);
 app.use('/favorites', favoritesRouter);
 app.use('/settings', settingsRouter);
+app.use('/notifications', notificationsRouter);
 
 app.use((_req: Request, _res: Response, next: NextFunction) => {
   const err = new Error('Route not found');
@@ -35,3 +39,9 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+const queueWorker = new NotificationQueueWorker();
+queueWorker.start();
+
+const greetingService = new DailyGreetingService();
+greetingService.start();
