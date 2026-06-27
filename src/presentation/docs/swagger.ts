@@ -42,10 +42,53 @@ const spec = {
           picture: { type: 'string', nullable: true },
         },
       },
+      TicketProduct: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          label: { type: 'string' },
+          amountMinor: { type: 'integer' },
+          currency: { type: 'string' },
+        },
+      },
     },
   },
   security: [{ bearerAuth: [] }],
   paths: {
+    '/catalog': {
+      get: {
+        tags: ['Catalog'],
+        summary: 'Get purchasable products for the given Google place types',
+        parameters: [
+          {
+            name: 'types',
+            in: 'query',
+            required: false,
+            schema: { type: 'string' },
+            description: 'Comma-separated Google place types, e.g. national_park,park',
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Products for the given types (currency USD)',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    products: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/TicketProduct' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
     '/health': {
       get: {
         tags: ['Health'],
