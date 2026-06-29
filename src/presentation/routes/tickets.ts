@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../../shared/middleware/authMiddleware';
-import { confirmTicket } from '../../application/services/ticketService';
+import { confirmTicket, getUserTickets } from '../../application/services/ticketService';
 
 const router = Router();
 
@@ -15,6 +15,16 @@ router.post('/confirm', async (req, res, next) => {
     }
     const ticket = await confirmTicket((req as any).user.sub, paymentIntentId);
     res.json({ ticket });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /tickets -> { tickets } (current user, newest first)
+router.get('/', async (req, res, next) => {
+  try {
+    const tickets = await getUserTickets((req as any).user.sub);
+    res.json({ tickets });
   } catch (error) {
     next(error);
   }
