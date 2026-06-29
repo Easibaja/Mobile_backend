@@ -9,6 +9,7 @@ import favoritesRouter from './presentation/routes/favorites';
 import settingsRouter from './presentation/routes/settings';
 import catalogRouter from './presentation/routes/catalog';
 import paymentsRouter from './presentation/routes/payments';
+import ticketsRouter from './presentation/routes/tickets';
 import { setupSwagger } from './presentation/docs/swagger';
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use('/favorites', favoritesRouter);
 app.use('/settings', settingsRouter);
 app.use('/catalog', catalogRouter);
 app.use('/payments', paymentsRouter);
+app.use('/tickets', ticketsRouter);
 
 app.use((_req: Request, _res: Response, next: NextFunction) => {
   const err = new Error('Route not found');
