@@ -17,6 +17,7 @@ model User {
   updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   favorites Favorite[]
   settings  UserSettings?
+  tickets   Ticket[]
 
   @@unique([provider, email])
   @@map("users")
@@ -53,4 +54,23 @@ model UserSettings {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
+}
+
+model Ticket {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  placeId         String   @map("place_id")
+  placeName       String   @map("place_name")
+  productId       String   @map("product_id")
+  productLabel    String   @map("product_label")
+  amountMinor     Int      @map("amount_minor")
+  currency        String
+  status          String   @default("valid")
+  qrToken         String   @unique @map("qr_token")
+  paymentIntentId String   @unique @map("payment_intent_id")
+  purchasedAt     DateTime @default(now()) @map("purchased_at") @db.Timestamptz(6)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("tickets")
 }
