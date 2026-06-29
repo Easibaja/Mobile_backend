@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { stripe } from '../../infrastructure/external-services/stripe';
 import { productById } from '../../domain/catalog';
-import { mintTicket, type Ticket } from '../../infrastructure/repositories/ticketRepository';
+import { mintTicket, findAllByUserId, type Ticket } from '../../infrastructure/repositories/ticketRepository';
 
 // Build an Error carrying an HTTP status for the shared errorHandler.
 const httpError = (status: number, message: string): Error => {
@@ -35,3 +35,6 @@ export const confirmTicket = async (userId: string, paymentIntentId: string): Pr
     paymentIntentId: paymentIntent.id,
   });
 };
+
+// Current user's tickets, newest first.
+export const getUserTickets = (userId: string): Promise<Ticket[]> => findAllByUserId(userId);
