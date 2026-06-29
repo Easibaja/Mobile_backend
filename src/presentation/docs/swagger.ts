@@ -148,6 +148,31 @@ const spec = {
         },
       },
     },
+    '/tickets': {
+      get: {
+        tags: ['Tickets'],
+        summary: "Get the current user's tickets (newest first)",
+        responses: {
+          200: {
+            description: 'List of tickets',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    tickets: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/Ticket' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
     '/tickets/confirm': {
       post: {
         tags: ['Tickets'],
