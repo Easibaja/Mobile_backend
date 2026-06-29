@@ -8,6 +8,7 @@ import { logger } from './shared/middleware/logger';
 import favoritesRouter from './presentation/routes/favorites';
 import settingsRouter from './presentation/routes/settings';
 import catalogRouter from './presentation/routes/catalog';
+import paymentsRouter from './presentation/routes/payments';
 import { setupSwagger } from './presentation/docs/swagger';
 
 dotenv.config();
@@ -25,6 +26,7 @@ app.use('/auth', authRouter);
 app.use('/favorites', favoritesRouter);
 app.use('/settings', settingsRouter);
 app.use('/catalog', catalogRouter);
+app.use('/payments', paymentsRouter);
 
 app.use((_req: Request, _res: Response, next: NextFunction) => {
   const err = new Error('Route not found');
