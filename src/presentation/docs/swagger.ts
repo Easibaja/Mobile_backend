@@ -51,6 +51,22 @@ const spec = {
           currency: { type: 'string' },
         },
       },
+      Ticket: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          placeId: { type: 'string' },
+          placeName: { type: 'string' },
+          productId: { type: 'string' },
+          productLabel: { type: 'string' },
+          amountMinor: { type: 'integer' },
+          currency: { type: 'string' },
+          status: { type: 'string' },
+          qrToken: { type: 'string' },
+          purchasedAt: { type: 'string', format: 'date-time' },
+          paymentIntentId: { type: 'string' },
+        },
+      },
     },
   },
   security: [{ bearerAuth: [] }],
@@ -129,6 +145,44 @@ const spec = {
           400: { description: 'Missing placeId, placeName or productId' },
           401: { description: 'Unauthorized' },
           404: { description: 'Unknown productId' },
+        },
+      },
+    },
+    '/tickets/confirm': {
+      post: {
+        tags: ['Tickets'],
+        summary: 'Confirm a succeeded PaymentIntent and mint the ticket (idempotent)',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['paymentIntentId'],
+                properties: {
+                  paymentIntentId: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'The minted (or existing) ticket',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    ticket: { $ref: '#/components/schemas/Ticket' },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Missing paymentIntentId or PaymentIntent not succeeded' },
+          401: { description: 'Unauthorized' },
+          403: { description: 'PaymentIntent belongs to another user' },
         },
       },
     },
