@@ -52,3 +52,12 @@ export const mintTicket = async (input: MintTicketInput): Promise<Ticket> => {
   });
   return mapToTicket(row);
 };
+
+// Current user's tickets, newest first.
+export const findAllByUserId = async (userId: string): Promise<Ticket[]> => {
+  const rows = await prisma.ticket.findMany({
+    where: { userId },
+    orderBy: { purchasedAt: 'desc' },
+  });
+  return rows.map(mapToTicket);
+};
