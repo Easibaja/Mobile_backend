@@ -89,6 +89,49 @@ const spec = {
         },
       },
     },
+    '/payments/intent': {
+      post: {
+        tags: ['Payments'],
+        summary: 'Create a Stripe PaymentIntent for a catalog product',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['placeId', 'placeName', 'productId'],
+                properties: {
+                  placeId: { type: 'string' },
+                  placeName: { type: 'string' },
+                  productId: { type: 'string', example: 'national_park.day' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'PaymentIntent client secret and product summary',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    clientSecret: { type: 'string' },
+                    amountMinor: { type: 'integer' },
+                    currency: { type: 'string' },
+                    productLabel: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Missing placeId, placeName or productId' },
+          401: { description: 'Unauthorized' },
+          404: { description: 'Unknown productId' },
+        },
+      },
+    },
     '/health': {
       get: {
         tags: ['Health'],
