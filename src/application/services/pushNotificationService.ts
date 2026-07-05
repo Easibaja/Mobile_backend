@@ -49,12 +49,22 @@ function parseHm(hm: string): number {
 }
 
 function getLocalMinutes(now: Date, timezone: string): number {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(now);
+  let parts: Intl.DateTimeFormatPart[];
+  try {
+    parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now);
+  } catch {
+    parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'UTC',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now);
+  }
 
   const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? '0');
   const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? '0');
@@ -72,7 +82,7 @@ function inQuietHours(now: Date, timezone: string, start?: string, end?: string)
   const endMinutes = parseHm(end);
 
   if (startMinutes === endMinutes) {
-    return true;
+    return false;
   }
 
   if (startMinutes < endMinutes) {

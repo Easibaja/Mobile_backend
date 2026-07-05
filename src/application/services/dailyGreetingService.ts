@@ -5,20 +5,48 @@ const preferenceRepo = new NotificationPreferenceRepository();
 const notificationRepo = new NotificationRepository();
 
 const MORNING_MINUTES = 7 * 60;
+const MORNING_WINDOW_MINUTES = 120;
 const NIGHT_MINUTES = 22 * 60;
+const NIGHT_WINDOW_MINUTES = 90;
+
+const DAY_MINUTES = 24 * 60;
 
 function getLocalMinutes(now: Date, timezone: string): number {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(now);
+  let parts: Intl.DateTimeFormatPart[];
+  try {
+    parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now);
+  } catch {
+    parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'UTC',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now);
+  }
 
   const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? '0');
   const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? '0');
 
   return hour * 60 + minute;
+}
+
+function withinWindow(localMinutes: number, targetMinutes: number, windowMinutes: number): boolean {
+  if (windowMinutes <= 0 || windowMinutes > DAY_MINUTES) {
+    return false;
+  }
+
+  const windowEnd = (targetMinutes + windowMinutes) % DAY_MINUTES;
+
+  if (targetMinutes < windowEnd) {
+    return localMinutes >= targetMinutes && localMinutes < windowEnd;
+  }
+
+  return localMinutes >= targetMinutes || localMinutes < windowEnd;
 }
 
 function getLocalDateKey(now: Date, timezone: string): string {
@@ -64,7 +92,7 @@ async function enqueueGreeting(userId: string, timezone: string, greetingType: '
       userId,
       category: 'infrastructure',
       title: 'Good morning',
-      body: 'Good morning! A new day is ready for your favorite places.',
+      body: 'Good morning. Open Mae to check nearby spots and plan one stop for today.',
       payload: {
         source: 'daily-greeting',
         greetingType,
@@ -78,8 +106,8 @@ async function enqueueGreeting(userId: string, timezone: string, greetingType: '
   await notificationRepo.enqueueJob({
     userId,
     category: 'infrastructure',
-    title: 'Good night',
-    body: 'Good night! We will be ready with more updates tomorrow.',
+    title: 'Good evening',
+    body: 'Good evening. Take a quick look at your saved places for tomorrow.',
     payload: {
       source: 'daily-greeting',
       greetingType,
@@ -100,16 +128,17 @@ export class DailyGreetingService {
 
     this.running = true;
     try {
+      const now = new Date();
       const recipients = await preferenceRepo.listGreetingRecipients();
 
       for (const recipient of recipients) {
-        const localMinutes = getLocalMinutes(new Date(), recipient.timezone);
+        const localMinutes = getLocalMinutes(now, recipient.timezone);
 
-        if (localMinutes === MORNING_MINUTES) {
+        if (withinWindow(localMinutes, MORNING_MINUTES, MORNING_WINDOW_MINUTES)) {
           await enqueueGreeting(recipient.userId, recipient.timezone, 'morning');
         }
 
-        if (localMinutes === NIGHT_MINUTES) {
+        if (withinWindow(localMinutes, NIGHT_MINUTES, NIGHT_WINDOW_MINUTES)) {
           await enqueueGreeting(recipient.userId, recipient.timezone, 'night');
         }
       }
@@ -123,6 +152,8 @@ export class DailyGreetingService {
     this.timer = setInterval(() => {
       void this.tick();
     }, 60_000);
+
+    this.timer.unref();
   }
 
   stop(): void {

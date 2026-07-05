@@ -11,6 +11,7 @@ import notificationsRouter from './presentation/routes/notifications';
 import { setupSwagger } from './presentation/docs/swagger';
 import { NotificationQueueWorker } from './infrastructure/queue/notificationQueueWorker';
 import { DailyGreetingService } from './application/services/dailyGreetingService';
+import { EngagementNotificationService } from './application/services/engagementNotificationService';
 
 dotenv.config();
 
@@ -45,3 +46,6 @@ queueWorker.start();
 
 const greetingService = new DailyGreetingService();
 greetingService.start();
+
+const engagementNotificationService = new EngagementNotificationService();
+engagementNotificationService.start();
