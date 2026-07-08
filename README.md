@@ -67,6 +67,18 @@ export DATABASE_URL="<target DATABASE_PUBLIC_URL>"
 npm run db:migrate          # = prisma migrate deploy
 ```
 
+### Migration safety rules
+
+When altering tables that might already contain rows, avoid one-step `NOT NULL`
+adds without a default/backfill strategy. Use this pattern instead:
+
+1. Add the new column as nullable.
+2. Backfill existing rows.
+3. Set `NOT NULL` once data is complete.
+
+This prevents production deploy failures where `migrate deploy` runs against
+non-empty tables.
+
 ### How migrations reach development / production
 
 Migrations are **not** applied on deploy. Instead, `.github/workflows/db-migrate.yml`
