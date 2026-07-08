@@ -13,5 +13,5 @@ if (!secretKey) {
 // LatestApiVersion. Keep it in sync with the SDK when upgrading.
 // See: https://docs.stripe.com/changelog/dahlia
 export const stripe = new Stripe(secretKey, {
-  apiVersion: '2026-05-27.dahlia',
+  apiVersion: '2026-06-24.dahlia',
 });
