@@ -67,6 +67,10 @@ export DATABASE_URL="<target DATABASE_PUBLIC_URL>"
 npm run db:migrate          # = prisma migrate deploy
 ```
 
+If your deployment flow does not run `.github/workflows/db-migrate.yml`, this
+service also runs `prisma migrate deploy` on `npm start` (via `prestart`) before
+booting the server. This prevents startup against an unmigrated database.
+
 ### Migration safety rules
 
 When altering tables that might already contain rows, avoid one-step `NOT NULL`

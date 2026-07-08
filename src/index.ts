@@ -39,13 +39,14 @@ app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+
+  // Start background workers only after HTTP server boot is complete.
+  const queueWorker = new NotificationQueueWorker();
+  queueWorker.start();
+
+  const greetingService = new DailyGreetingService();
+  greetingService.start();
+
+  const engagementNotificationService = new EngagementNotificationService();
+  engagementNotificationService.start();
 });
-
-const queueWorker = new NotificationQueueWorker();
-queueWorker.start();
-
-const greetingService = new DailyGreetingService();
-greetingService.start();
-
-const engagementNotificationService = new EngagementNotificationService();
-engagementNotificationService.start();
