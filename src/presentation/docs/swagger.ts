@@ -42,6 +42,31 @@ const spec = {
           picture: { type: 'string', nullable: true },
         },
       },
+      TicketProduct: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          label: { type: 'string' },
+          amountMinor: { type: 'integer' },
+          currency: { type: 'string' },
+        },
+      },
+      Ticket: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          placeId: { type: 'string' },
+          placeName: { type: 'string' },
+          productId: { type: 'string' },
+          productLabel: { type: 'string' },
+          amountMinor: { type: 'integer' },
+          currency: { type: 'string' },
+          status: { type: 'string' },
+          qrToken: { type: 'string' },
+          purchasedAt: { type: 'string', format: 'date-time' },
+          paymentIntentId: { type: 'string' },
+        },
+      },
       NotificationPreferences: {
         type: 'object',
         properties: {
@@ -108,6 +133,146 @@ const spec = {
   },
   security: [{ bearerAuth: [] }],
   paths: {
+    '/catalog': {
+      get: {
+        tags: ['Catalog'],
+        summary: 'Get purchasable products for the given Google place types',
+        parameters: [
+          {
+            name: 'types',
+            in: 'query',
+            required: false,
+            schema: { type: 'string' },
+            description: 'Comma-separated Google place types, e.g. national_park,park',
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Products for the given types (currency USD)',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    products: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/TicketProduct' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/payments/intent': {
+      post: {
+        tags: ['Payments'],
+        summary: 'Create a Stripe PaymentIntent for a catalog product',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['placeId', 'placeName', 'productId'],
+                properties: {
+                  placeId: { type: 'string' },
+                  placeName: { type: 'string' },
+                  productId: { type: 'string', example: 'national_park.day' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'PaymentIntent client secret and product summary',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    clientSecret: { type: 'string' },
+                    amountMinor: { type: 'integer' },
+                    currency: { type: 'string' },
+                    productLabel: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Missing placeId, placeName or productId' },
+          401: { description: 'Unauthorized' },
+          404: { description: 'Unknown productId' },
+        },
+      },
+    },
+    '/tickets': {
+      get: {
+        tags: ['Tickets'],
+        summary: "Get the current user's tickets (newest first)",
+        responses: {
+          200: {
+            description: 'List of tickets',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    tickets: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/Ticket' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/tickets/confirm': {
+      post: {
+        tags: ['Tickets'],
+        summary: 'Confirm a succeeded PaymentIntent and mint the ticket (idempotent)',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['paymentIntentId'],
+                properties: {
+                  paymentIntentId: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'The minted (or existing) ticket',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    ticket: { $ref: '#/components/schemas/Ticket' },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Missing paymentIntentId or PaymentIntent not succeeded' },
+          401: { description: 'Unauthorized' },
+          403: { description: 'PaymentIntent belongs to another user' },
+        },
+      },
+    },
     '/health': {
       get: {
         tags: ['Health'],
