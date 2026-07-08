@@ -67,6 +67,68 @@ const spec = {
           paymentIntentId: { type: 'string' },
         },
       },
+      NotificationPreferences: {
+        type: 'object',
+        properties: {
+          userId: { type: 'string' },
+          infrastructureEnabled: { type: 'boolean' },
+          locationEnabled: { type: 'boolean' },
+          weatherEnabled: { type: 'boolean' },
+          quietHoursStart: { type: 'string', nullable: true, example: '22:00' },
+          quietHoursEnd: { type: 'string', nullable: true, example: '07:00' },
+          timezone: { type: 'string', example: 'America/Costa_Rica' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      NotificationDelivery: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          userId: { type: 'string' },
+          deviceId: { type: 'string', nullable: true },
+          category: { type: 'string', enum: ['infrastructure', 'location', 'weather'] },
+          title: { type: 'string' },
+          body: { type: 'string' },
+          status: { type: 'string' },
+          providerMessageId: { type: 'string', nullable: true },
+          failureReason: { type: 'string', nullable: true },
+          sentAt: { type: 'string', format: 'date-time', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      NotificationJob: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          userId: { type: 'string' },
+          category: { type: 'string', enum: ['infrastructure', 'location', 'weather'] },
+          title: { type: 'string' },
+          body: { type: 'string' },
+          status: { type: 'string' },
+          attempts: { type: 'number' },
+          maxAttempts: { type: 'number' },
+          nextAttemptAt: { type: 'string', format: 'date-time' },
+          lastError: { type: 'string', nullable: true },
+          processedAt: { type: 'string', format: 'date-time', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      DeviceRegistration: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          userId: { type: 'string' },
+          token: { type: 'string' },
+          platform: { type: 'string' },
+          isActive: { type: 'boolean' },
+          invalidatedAt: { type: 'string', format: 'date-time', nullable: true },
+          lastSeenAt: { type: 'string', format: 'date-time' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
     },
   },
   security: [{ bearerAuth: [] }],
@@ -400,6 +462,182 @@ const spec = {
         ],
         responses: {
           204: { description: 'Deleted' },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/devices': {
+      post: {
+        tags: ['Notifications'],
+        summary: 'Register or update an Expo push device token for current user',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['token'],
+                properties: {
+                  token: { type: 'string', example: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]' },
+                  platform: { type: 'string', example: 'android' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: 'Device token registered',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    device: { $ref: '#/components/schemas/DeviceRegistration' },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Invalid payload' },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/preferences': {
+      get: {
+        tags: ['Notifications'],
+        summary: 'Get notification preferences for current user',
+        responses: {
+          200: {
+            description: 'Notification preferences',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    preferences: { $ref: '#/components/schemas/NotificationPreferences' },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+      put: {
+        tags: ['Notifications'],
+        summary: 'Update notification preferences for current user',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: [
+                  'infrastructureEnabled',
+                  'locationEnabled',
+                  'weatherEnabled',
+                  'timezone',
+                ],
+                properties: {
+                  infrastructureEnabled: { type: 'boolean' },
+                  locationEnabled: { type: 'boolean' },
+                  weatherEnabled: { type: 'boolean' },
+                  quietHoursStart: { type: 'string', nullable: true, example: '22:00' },
+                  quietHoursEnd: { type: 'string', nullable: true, example: '07:00' },
+                  timezone: { type: 'string', example: 'America/Costa_Rica' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Updated notification preferences',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    preferences: { $ref: '#/components/schemas/NotificationPreferences' },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Invalid payload' },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/test': {
+      post: {
+        tags: ['Notifications'],
+        summary: 'Queue a test push notification for current user',
+        requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  body: { type: 'string' },
+                  category: { type: 'string', enum: ['infrastructure', 'location', 'weather'] },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          202: {
+            description: 'Test notification queued',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    job: { $ref: '#/components/schemas/NotificationJob' },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Invalid payload' },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/deliveries': {
+      get: {
+        tags: ['Notifications'],
+        summary: 'List notification delivery attempts for current user',
+        parameters: [
+          {
+            name: 'limit',
+            in: 'query',
+            required: false,
+            schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Notification deliveries',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    deliveries: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/NotificationDelivery' },
+                    },
+                  },
+                },
+              },
+            },
+          },
           401: { description: 'Unauthorized' },
         },
       },
