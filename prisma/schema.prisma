@@ -17,6 +17,10 @@ model User {
   updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   favorites Favorite[]
   settings  UserSettings?
+  devices   DeviceRegistration[]
+  notificationPreferences UserNotificationPreferences?
+  notificationDeliveries  NotificationDelivery[]
+  notificationJobs        NotificationJob[]
 
   @@unique([provider, email])
   @@map("users")
@@ -54,3 +58,79 @@ model UserSettings {
 
   @@map("user_settings")
 }
+
+model DeviceRegistration {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  token        String
+  platform     String
+  isActive     Boolean  @default(true) @map("is_active")
+  invalidatedAt DateTime? @map("invalidated_at") @db.Timestamptz(6)
+  lastSeenAt   DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries   NotificationDelivery[]
+
+  @@unique([userId, token])
+  @@index([userId, isActive])
+  @@map("device_registrations")
+}
+
+model UserNotificationPreferences {
+  userId                String   @id @map("user_id")
+  infrastructureEnabled Boolean  @default(true) @map("infrastructure_enabled")
+  locationEnabled       Boolean  @default(true) @map("location_enabled")
+  weatherEnabled        Boolean  @default(true) @map("weather_enabled")
+  quietHoursStart       String?  @map("quiet_hours_start")
+  quietHoursEnd         String?  @map("quiet_hours_end")
+  timezone              String   @default("UTC")
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notification_preferences")
+}
+
+model NotificationDelivery {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  deviceId          String?  @map("device_id")
+  category          String
+  title             String
+  body              String
+  payload           Json?
+  status            String   @default("queued")
+  providerMessageId String?  @map("provider_message_id")
+  failureReason     String?  @map("failure_reason")
+  sentAt            DateTime? @map("sent_at") @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device            DeviceRegistration? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("notification_deliveries")
+}
+
+model NotificationJob {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  category     String
+  title        String
+  body         String
+  payload      Json?
+  status       String   @default("queued")
+  attempts     Int      @default(0)
+  maxAttempts  Int      @default(5) @map("max_attempts")
+  nextAttemptAt DateTime @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  lastError    String?  @map("last_error")
+  processedAt  DateTime? @map("processed_at") @db.Timestamptz(6)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([userId, createdAt])
+  @@map("notification_jobs")
+}
+
