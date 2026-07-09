@@ -16,6 +16,12 @@ model User {
   createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   favorites Favorite[]
+  settings  UserSettings?
+  devices   DeviceRegistration[]
+  notificationPreferences UserNotificationPreferences?
+  notificationDeliveries  NotificationDelivery[]
+  notificationJobs        NotificationJob[]
+  tickets   Ticket[]
 
   @@unique([provider, email])
   @@map("users")
@@ -33,9 +39,118 @@ model Favorite {
   rating    Float?
   photoName String?  @map("photo_name")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, placeId])
   @@index([userId])
   @@map("favorites")
 }
+
+model UserSettings {
+  userId          String   @id @map("user_id")
+  units           String   @default("km")
+  searchRadius    Int      @default(15000) @map("search_radius")
+  themePreference String   @default("auto") @map("theme_preference")
+  notifications   Boolean  @default(true)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model Ticket {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  placeId         String   @map("place_id")
+  placeName       String   @map("place_name")
+  productId       String   @map("product_id")
+  productLabel    String   @map("product_label")
+  amountMinor     Int      @map("amount_minor")
+  currency        String
+  status          String   @default("valid")
+  qrToken         String   @unique @map("qr_token")
+  paymentIntentId String   @unique @map("payment_intent_id")
+  purchasedAt     DateTime @default(now()) @map("purchased_at") @db.Timestamptz(6)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("tickets")
+}
+
+model DeviceRegistration {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  token        String
+  platform     String
+  isActive     Boolean  @default(true) @map("is_active")
+  invalidatedAt DateTime? @map("invalidated_at") @db.Timestamptz(6)
+  lastSeenAt   DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries   NotificationDelivery[]
+
+  @@unique([userId, token])
+  @@index([userId, isActive])
+  @@map("device_registrations")
+}
+
+model UserNotificationPreferences {
+  userId                String   @id @map("user_id")
+  infrastructureEnabled Boolean  @default(true) @map("infrastructure_enabled")
+  locationEnabled       Boolean  @default(true) @map("location_enabled")
+  weatherEnabled        Boolean  @default(true) @map("weather_enabled")
+  quietHoursStart       String?  @map("quiet_hours_start")
+  quietHoursEnd         String?  @map("quiet_hours_end")
+  timezone              String   @default("UTC")
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notification_preferences")
+}
+
+model NotificationDelivery {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  deviceId          String?  @map("device_id")
+  category          String
+  title             String
+  body              String
+  payload           Json?
+  status            String   @default("queued")
+  providerMessageId String?  @map("provider_message_id")
+  failureReason     String?  @map("failure_reason")
+  sentAt            DateTime? @map("sent_at") @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device            DeviceRegistration? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("notification_deliveries")
+}
+
+model NotificationJob {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  category     String
+  title        String
+  body         String
+  payload      Json?
+  status       String   @default("queued")
+  attempts     Int      @default(0)
+  maxAttempts  Int      @default(5) @map("max_attempts")
+  nextAttemptAt DateTime @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  lastError    String?  @map("last_error")
+  processedAt  DateTime? @map("processed_at") @db.Timestamptz(6)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([userId, createdAt])
+  @@map("notification_jobs")
+}
+
